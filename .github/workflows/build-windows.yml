@@ -1,0 +1,112 @@
+name: Build Windows Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ffmpeg
+        run: choco install ffmpeg -y
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pyinstaller
+
+      - name: Get ffmpeg/ffprobe paths
+        id: ffmpeg
+        run: |
+          $ff = (Get-Command ffmpeg).Source
+          $fp = (Get-Command ffprobe).Source
+          echo "path=$ff" >> $env:GITHUB_OUTPUT
+          echo "probe=$fp" >> $env:GITHUB_OUTPUT
+
+      - name: Build recorder subprocess (onefile)
+        run: |
+          pyinstaller `
+            --onefile `
+            --name win-rec-recorder `
+            --console `
+            --noconfirm `
+            win_rec\recorder_win.py
+        shell: pwsh
+
+      - name: Build main exe (onedir)
+        run: |
+          pyinstaller `
+            --onedir `
+            --name win-rec `
+            --console `
+            --noconfirm `
+            "--add-binary=${{ steps.ffmpeg.outputs.path }};." `
+            "--add-binary=${{ steps.ffmpeg.outputs.probe }};." `
+            --add-data "win_rec;win_rec" `
+            --hidden-import win_rec.cli `
+            --hidden-import win_rec.recorder `
+            --hidden-import win_rec.recorder_win `
+            --hidden-import win_rec.transcribe `
+            --hidden-import win_rec.summarize `
+            --hidden-import win_rec.refine `
+            --hidden-import win_rec.store `
+            --hidden-import win_rec.config `
+            --hidden-import win_rec.glossary `
+            --hidden-import win_rec.diarize `
+            --hidden-import typer `
+            --hidden-import rich `
+            --hidden-import faster_whisper `
+            --hidden-import ctranslate2 `
+            --hidden-import anthropic `
+            --hidden-import openai `
+            --hidden-import filelock `
+            --hidden-import send2trash `
+            --hidden-import pydub `
+            --hidden-import mutagen `
+            --hidden-import yaml `
+            --collect-all faster_whisper `
+            --collect-all ctranslate2 `
+            --collect-all silero_vad `
+            main.py
+        shell: pwsh
+
+      - name: Merge recorder exe into main dist
+        run: copy /y dist\win-rec-recorder.exe dist\win-rec\win-rec-recorder.exe
+        shell: cmd
+
+      - name: Package zip
+        run: Compress-Archive -Path dist\win-rec\* -DestinationPath dist\win-rec-windows.zip
+        shell: pwsh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: win-rec-windows
+          path: dist\win-rec-windows.zip
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist\win-rec-windows.zip
+          body: |
+            ## 安装说明
+
+            1. 下载 `win-rec-windows.zip`
+            2. 解压到任意文件夹
+            3. 在该文件夹内打开命令提示符（cmd），运行 `win-rec.exe start`
+
+            详细说明请参阅 README.md。

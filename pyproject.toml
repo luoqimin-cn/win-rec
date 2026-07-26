@@ -1,0 +1,46 @@
+[project]
+name = "win-rec"
+version = "0.1.0"
+description = "Smart meeting recorder, transcriber, and minute generator for Windows"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "win-rec contributors"},
+]
+keywords = ["meeting", "recorder", "transcription", "whisper", "windows", "cli"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Office/Business",
+]
+dependencies = [
+    "typer>=0.12",
+    "rich>=13.7",
+    "pydub>=0.25",
+    "mutagen>=1.47",
+    "openai>=1.50",
+    "anthropic>=0.40",
+    "faster-whisper>=1.0",
+    "silero-vad>=6.0",
+    "filelock>=3.12",
+    "send2trash>=1.8",
+    "PyYAML>=6.0",
+]
+
+[project.scripts]
+win-rec = "win_rec.cli:app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["win_rec"]
