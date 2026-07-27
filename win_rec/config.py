@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import shutil
+import sys
 from pathlib import Path
 
 DATA_ROOT = Path(os.environ.get("AI_REC_DATA", Path.home() / "AI_Rec_Data"))
@@ -44,3 +46,27 @@ CHUNK_OVERLAP_MS = 200
 def ensure_dirs() -> None:
     RECORDINGS_DIR.mkdir(parents=True, exist_ok=True)
     RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def ffmpeg_path() -> str:
+    """Return path to ffmpeg: bundled exe dir when frozen, otherwise system PATH."""
+    if getattr(sys, "frozen", False):
+        candidate = Path(sys.executable).parent / "ffmpeg.exe"
+        if candidate.exists():
+            return str(candidate)
+    ff = shutil.which("ffmpeg")
+    if ff:
+        return ff
+    return "ffmpeg"
+
+
+def ffprobe_path() -> str:
+    """Return path to ffprobe: bundled exe dir when frozen, otherwise system PATH."""
+    if getattr(sys, "frozen", False):
+        candidate = Path(sys.executable).parent / "ffprobe.exe"
+        if candidate.exists():
+            return str(candidate)
+    fp = shutil.which("ffprobe")
+    if fp:
+        return fp
+    return "ffprobe"

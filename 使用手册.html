@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>win-rec 使用手册</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #2c2c2c;
+    background: #f5f5f5;
+  }
+  .page {
+    max-width: 860px;
+    margin: 30px auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    padding: 50px 60px;
+  }
+  h1 { font-size: 28px; color: #1a1a2e; border-bottom: 3px solid #4a90d9; padding-bottom: 12px; margin-bottom: 8px; }
+  .subtitle { color: #666; font-size: 13px; margin-bottom: 36px; }
+  h2 { font-size: 19px; color: #1a1a2e; background: #f0f4ff; border-left: 4px solid #4a90d9; padding: 8px 14px; margin: 36px 0 16px; border-radius: 0 4px 4px 0; }
+  h3 { font-size: 16px; color: #2c5282; margin: 22px 0 10px; }
+  p { margin: 8px 0 12px; color: #333; }
+  ul, ol { padding-left: 22px; margin: 8px 0 14px; }
+  li { margin: 5px 0; }
+  code {
+    font-family: Consolas, "Courier New", monospace;
+    background: #eef2ff;
+    color: #2d3748;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-size: 13.5px;
+  }
+  .cmd-block {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 13.5px;
+    padding: 16px 20px;
+    border-radius: 6px;
+    margin: 10px 0 18px;
+    line-height: 1.7;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .cmd-block .comment { color: #6c7086; }
+  .cmd-block .prompt { color: #89b4fa; }
+  .step-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: #f8faff;
+    border: 1px solid #d0dff5;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 10px 0;
+  }
+  .step-num {
+    min-width: 30px;
+    height: 30px;
+    background: #4a90d9;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .step-content { flex: 1; }
+  .tip {
+    background: #fffbea;
+    border-left: 4px solid #f6ad55;
+    padding: 10px 16px;
+    margin: 14px 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 14px;
+    color: #744210;
+  }
+  .warn {
+    background: #fff5f5;
+    border-left: 4px solid #fc8181;
+    padding: 10px 16px;
+    margin: 14px 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 14px;
+    color: #742a2a;
+  }
+  .ok {
+    background: #f0fff4;
+    border-left: 4px solid #68d391;
+    padding: 10px 16px;
+    margin: 14px 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 14px;
+    color: #22543d;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 18px; font-size: 14px; }
+  th { background: #4a90d9; color: #fff; padding: 9px 14px; text-align: left; }
+  td { padding: 8px 14px; border-bottom: 1px solid #e2e8f0; }
+  tr:nth-child(even) td { background: #f7f9ff; }
+  .toc { background: #f0f4ff; border-radius: 6px; padding: 18px 24px; margin-bottom: 36px; }
+  .toc h3 { margin: 0 0 10px; font-size: 15px; color: #2c5282; }
+  .toc ol { margin: 0; padding-left: 20px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #2c5282; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .version { font-size: 12px; color: #999; margin-top: 40px; padding-top: 16px; border-top: 1px solid #eee; text-align: center; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>win-rec 使用手册</h1>
+<p class="subtitle">会议录音 · 语音转文字 · AI 智能总结 &nbsp;|&nbsp; 适用于 Windows 10/11 普通用户</p>
+
+<div class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#install">安装说明</a></li>
+    <li><a href="#apikey">配置 DeepSeek API Key</a></li>
+    <li><a href="#quickstart">快速开始（录一次会议）</a></li>
+    <li><a href="#commands">所有命令一览</a></li>
+    <li><a href="#workflow">完整使用流程</a></li>
+    <li><a href="#advanced">高级设置</a></li>
+    <li><a href="#faq">常见问题</a></li>
+  </ol>
+</div>
+
+<!-- ───────────────────────────────── -->
+<h2 id="install">1. 安装说明</h2>
+
+<h3>第一步：解压程序包</h3>
+<div class="step-box">
+  <div class="step-num">1</div>
+  <div class="step-content">
+    <p>将 <code>win-rec-windows.zip</code> 解压到你想要存放的位置，例如：</p>
+    <div class="cmd-block">C:\Users\你的用户名\Desktop\win-rec\</div>
+    <p>解压后目录结构如下：</p>
+    <div class="cmd-block">win-rec\
+  win-rec.exe              ← 主程序
+  win-rec-recorder.exe     ← 录音子程序（自动调用，无需手动运行）
+  ffmpeg.exe               ← 音频处理工具（已内置）
+  ffprobe.exe              ← 音频分析工具（已内置）
+  使用手册.html             ← 本文档
+  （其他依赖文件...）</div>
+  </div>
+</div>
+
+<div class="step-box">
+  <div class="step-num">2</div>
+  <div class="step-content">
+    <p>在 <code>win-rec</code> 文件夹内，<strong>按住 Shift + 右键</strong>，选择 <strong>"在此处打开命令窗口"</strong> 或 <strong>"在终端中打开"</strong>。</p>
+    <p>如果没有这个选项，也可以：</p>
+    <ol>
+      <li>在地址栏输入 <code>cmd</code>，然后按回车</li>
+      <li>或者打开开始菜单，搜索"命令提示符"，启动后用 <code>cd</code> 命令切换到解压目录</li>
+    </ol>
+  </div>
+</div>
+
+<div class="step-box">
+  <div class="step-num">3</div>
+  <div class="step-content">
+    <p>输入以下命令验证程序正常：</p>
+    <div class="cmd-block"><span class="prompt">&gt;</span> win-rec.exe --help</div>
+    <p>如果看到命令列表，说明安装成功。</p>
+  </div>
+</div>
+
+<div class="tip">
+  <strong>提示：</strong>不需要管理员权限，也不需要安装 Python 或 ffmpeg——所有依赖都已打包在内。
+</div>
+
+<h3>首次运行：下载 Whisper 语音识别模型</h3>
+<p>第一次使用转录功能时，程序会自动从网络下载 Whisper large-v3 模型（约 3GB）。请确保网络畅通，下载过程需要几分钟，之后无需重复下载。</p>
+
+<div class="warn">
+  <strong>注意：</strong>模型会保存在 <code>C:\Users\你的用户名\.cache\huggingface\</code>，无需管理员权限。
+</div>
+
+<!-- ───────────────────────────────── -->
+<h2 id="apikey">2. 配置 DeepSeek API Key</h2>
+
+<p>win-rec 使用 DeepSeek 的 AI 接口来生成会议总结。需要在电脑上设置两个环境变量。</p>
+
+<h3>第一步：获取 DeepSeek API Key</h3>
+<ol>
+  <li>访问 <a href="https://platform.deepseek.com" target="_blank">platform.deepseek.com</a>，注册账号并登录</li>
+  <li>进入控制台 → API Keys，点击"创建 API Key"</li>
+  <li>复制生成的 Key（形如 <code>sk-xxxxxxxxxxxxxxxx</code>）</li>
+</ol>
+
+<div class="tip">
+  <strong>提示：</strong>DeepSeek 提供按量付费，价格远低于 OpenAI。处理一小时会议录音的总结费用通常不超过 ¥0.5。
+</div>
+
+<h3>第二步：设置环境变量（永久生效，只需操作一次）</h3>
+
+<p>打开命令提示符（不需要管理员权限），逐行输入以下命令：</p>
+
+<div class="cmd-block"><span class="comment">:: 第1行：设置 API Key（把 sk-xxx 替换成你自己的 DeepSeek Key）</span>
+<span class="prompt">&gt;</span> setx OPENAI_API_KEY "sk-xxxxxxxxxxxxxxxxxxxxxxxx"
+
+<span class="comment">:: 第2行：指定将请求发到 DeepSeek 服务器（而非 OpenAI）</span>
+<span class="prompt">&gt;</span> setx OPENAI_BASE_URL "https://api.deepseek.com"
+
+<span class="comment">:: 第3行：指定使用 DeepSeek 的 AI 总结模型</span>
+<span class="prompt">&gt;</span> setx AI_REC_SUMMARY_MODEL "deepseek-chat"
+
+<span class="comment">:: 第4行：使用 OpenAI 兼容的请求格式（DeepSeek 兼容此格式，请求仍发往 DeepSeek）</span>
+<span class="prompt">&gt;</span> setx AI_REC_SUMMARY_BACKEND "openai"</div>
+
+<div class="tip">
+  <strong>说明：</strong>变量名中含有"OPENAI"只是因为 DeepSeek 的接口格式与 OpenAI 完全兼容，程序复用了同一套请求格式。实际所有请求都发往 DeepSeek 服务器，费用从 DeepSeek 账户扣除，与 OpenAI 无关。
+</div>
+
+<div class="warn">
+  <strong>重要：</strong>设置完成后，<strong>必须关闭并重新打开命令提示符</strong>，环境变量才能生效。
+</div>
+
+<h3>验证配置</h3>
+<p>重新打开命令提示符后，输入：</p>
+<div class="cmd-block"><span class="prompt">&gt;</span> echo %OPENAI_API_KEY%</div>
+<p>如果显示你设置的 Key，说明配置成功。</p>
+
+<!-- ───────────────────────────────── -->
+<h2 id="quickstart">3. 快速开始（录一次会议）</h2>
+
+<p>以下是一次完整会议录音的最简操作步骤：</p>
+
+<div class="step-box">
+  <div class="step-num">1</div>
+  <div class="step-content">
+    <strong>会议开始前，启动录音</strong>
+    <div class="cmd-block"><span class="prompt">&gt;</span> win-rec.exe start</div>
+    <p>看到 <code>Recording started</code> 提示即表示开始录音。</p>
+  </div>
+</div>
+
+<div class="step-box">
+  <div class="step-num">2</div>
+  <div class="step-content">
+    <strong>会议结束后，停止录音</strong>
+    <div class="cmd-block"><span class="prompt">&gt;</span> win-rec.exe stop</div>
+  </div>
+</div>
+
+<div class="step-box">
+  <div class="step-num">3</div>
+  <div class="step-content">
+    <strong>生成转录和总结</strong>
+    <div class="cmd-block"><span class="prompt">&gt;</span> win-rec.exe process latest</div>
+    <p>程序会自动完成：语音识别 → AI 总结 → 保存 Markdown 文件</p>
+  </div>
+</div>
+
+<div class="ok">
+  <strong>完成！</strong>总结文件保存在 <code>C:\Users\你的用户名\AI_Rec_Data\recordings\日期时间\summary.md</code>
+</div>
+
+<!-- ───────────────────────────────── -->
+<h2 id="commands">4. 所有命令一览</h2>
+
+<table>
+  <tr>
+    <th>命令</th>
+    <th>功能</th>
+    <th>示例</th>
+  </tr>
+  <tr>
+    <td><code>win-rec.exe start</code></td>
+    <td>开始录音</td>
+    <td><code>win-rec.exe start</code><br><code>win-rec.exe start "周例会"</code></td>
+  </tr>
+  <tr>
+    <td><code>win-rec.exe stop</code></td>
+    <td>停止录音；加 <code>--process</code> 可在停止后立即转录并生成总结</td>
+    <td><code>win-rec.exe stop</code><br><code>win-rec.exe stop --process</code></td>
+  </tr>
+  <tr>
+    <td><code>win-rec.exe pause</code></td>
+    <td>暂停录音</td>
+    <td><code>win-rec.exe pause</code></td>
+  </tr>
+  <tr>
+    <td><code>win-rec.exe resume</code></td>
+    <td>恢复录音</td>
+    <td><code>win-rec.exe resume</code></td>
+  </tr>
+  <tr>
+    <td><code>win-rec.exe status</code></td>
+    <td>查看当前录音状态</td>
+    <td><code>win-rec.exe status</code></td>
+  </tr>
+  <tr>
+    <td><code>win-rec.exe process</code></td>
+    <td>转录并生成总结</td>
+    <td><code>win-rec.exe process latest</code><br><code>win-rec.exe process 2025-01-15_10-00-00</code></td>
+  </tr>
+  <tr>
+    <td><code>win-rec.exe list</code></td>
+    <td>列出所有录音</td>
+    <td><code>win-rec.exe list</code></td>
+  </tr>
+  <tr>
+    <td><code>win-rec.exe show</code></td>
+    <td>查看某次录音信息</td>
+    <td><code>win-rec.exe show latest</code></td>
+  </tr>
+  <tr>
+    <td><code>win-rec.exe delete</code></td>
+    <td>删除某次录音</td>
+    <td><code>win-rec.exe delete 2025-01-15_10-00-00</code></td>
+  </tr>
+</table>
+
+<!-- ───────────────────────────────── -->
+<h2 id="workflow">5. 完整使用流程</h2>
+
+<h3>场景一：普通会议录音</h3>
+<div class="cmd-block"><span class="comment">:: 开会前启动录音（可选：给本次录音起个名字）</span>
+<span class="prompt">&gt;</span> win-rec.exe start "产品需求评审会"
+
+<span class="comment">:: 途中临时离开或讨论私密内容时，暂停录音</span>
+<span class="prompt">&gt;</span> win-rec.exe pause
+
+<span class="comment">:: 回来后恢复</span>
+<span class="prompt">&gt;</span> win-rec.exe resume
+
+<span class="comment">:: 会议结束，停止录音</span>
+<span class="prompt">&gt;</span> win-rec.exe stop
+
+<span class="comment">:: 处理最新一次录音（转录 + 总结）</span>
+<span class="prompt">&gt;</span> win-rec.exe process latest</div>
+
+<h3>场景二：查看历史录音</h3>
+<div class="cmd-block"><span class="comment">:: 列出所有录音</span>
+<span class="prompt">&gt;</span> win-rec.exe list
+
+<span class="comment">:: 重新处理某次历史录音（使用 list 显示的日期时间作为 ID）</span>
+<span class="prompt">&gt;</span> win-rec.exe process 2025-01-15_10-00-00</div>
+
+<h3>录音文件存储位置</h3>
+<p>所有录音和处理结果保存在：</p>
+<div class="cmd-block">C:\Users\你的用户名\AI_Rec_Data\recordings\
+  2025-01-15_10-00-00\
+    mic.m4a           ← 原始录音文件
+    transcript.json   ← 详细转录数据
+    transcript.md     ← 带时间戳的转录文本
+    summary.md        ← AI 生成的会议总结
+    meta.json         ← 录音元数据</div>
+
+<div class="tip">
+  <strong>提示：</strong>可以用任意文本编辑器（记事本、VS Code 等）打开 <code>.md</code> 文件查看内容。
+</div>
+
+<!-- ───────────────────────────────── -->
+<h2 id="advanced">6. 高级设置</h2>
+
+<h3>修改录音数据存储位置</h3>
+<div class="cmd-block"><span class="comment">:: 将录音保存到 D 盘（路径中不要有空格）</span>
+<span class="prompt">&gt;</span> setx AI_REC_DATA "D:\会议录音"</div>
+
+<h3>指定录音语言（加快转录速度）</h3>
+<div class="cmd-block"><span class="comment">:: 如果会议全程说中文，指定语言可避免自动检测的延迟</span>
+<span class="prompt">&gt;</span> setx AI_REC_WHISPER_LANGUAGE "zh"
+
+<span class="comment">:: 英文会议</span>
+<span class="prompt">&gt;</span> setx AI_REC_WHISPER_LANGUAGE "en"</div>
+
+<h3>添加专业词汇提示（提高行业术语识别准确率）</h3>
+<div class="cmd-block"><span class="comment">:: 例如技术会议中常用的专有名词</span>
+<span class="prompt">&gt;</span> setx AI_REC_WHISPER_PROMPT "Kubernetes, Docker, CI/CD, API, 微服务"</div>
+
+<h3>改用 Claude API 生成总结</h3>
+<div class="cmd-block"><span class="comment">:: 如果你有 Anthropic API Key，也可以用 Claude 生成总结</span>
+<span class="prompt">&gt;</span> setx ANTHROPIC_API_KEY "sk-ant-xxxxxxxxxxxxxxxx"
+<span class="prompt">&gt;</span> setx AI_REC_SUMMARY_BACKEND "anthropic"
+<span class="prompt">&gt;</span> setx AI_REC_SUMMARY_MODEL "claude-opus-5"</div>
+
+<h3>所有可配置的环境变量</h3>
+<table>
+  <tr>
+    <th>变量名</th>
+    <th>默认值</th>
+    <th>说明</th>
+  </tr>
+  <tr>
+    <td><code>OPENAI_API_KEY</code></td>
+    <td>（必须设置）</td>
+    <td>DeepSeek 或 OpenAI API Key</td>
+  </tr>
+  <tr>
+    <td><code>OPENAI_BASE_URL</code></td>
+    <td>（空，使用 OpenAI 官方）</td>
+    <td>DeepSeek 设为 <code>https://api.deepseek.com</code></td>
+  </tr>
+  <tr>
+    <td><code>AI_REC_SUMMARY_MODEL</code></td>
+    <td><code>claude-sonnet-4-6</code></td>
+    <td>总结使用的 AI 模型，DeepSeek 设为 <code>deepseek-chat</code></td>
+  </tr>
+  <tr>
+    <td><code>AI_REC_SUMMARY_BACKEND</code></td>
+    <td><code>auto</code></td>
+    <td>总结后端：<code>openai</code> / <code>anthropic</code></td>
+  </tr>
+  <tr>
+    <td><code>AI_REC_LOCAL_WHISPER_MODEL</code></td>
+    <td><code>large-v3</code></td>
+    <td>Whisper 模型大小（large-v3 / medium / small）</td>
+  </tr>
+  <tr>
+    <td><code>AI_REC_WHISPER_LANGUAGE</code></td>
+    <td>（自动检测）</td>
+    <td>录音语言：<code>zh</code> / <code>en</code> 等</td>
+  </tr>
+  <tr>
+    <td><code>AI_REC_WHISPER_PROMPT</code></td>
+    <td>（空）</td>
+    <td>专业词汇提示，帮助识别专有名词</td>
+  </tr>
+  <tr>
+    <td><code>AI_REC_DATA</code></td>
+    <td>用户目录下 <code>AI_Rec_Data</code></td>
+    <td>录音数据存储根目录</td>
+  </tr>
+</table>
+
+<!-- ───────────────────────────────── -->
+<h2 id="faq">7. 常见问题</h2>
+
+<h3>Q: 运行后提示找不到程序，怎么办？</h3>
+<p>请确保命令提示符的当前目录是 <code>win-rec</code> 文件夹（即 <code>win-rec.exe</code> 所在的目录）。可以在地址栏输入 <code>cmd</code> 直接打开，或使用 <code>cd</code> 命令切换。</p>
+
+<h3>Q: 转录很慢，CPU 占用很高，正常吗？</h3>
+<p>正常。本地 Whisper 转录需要大量计算，一小时录音通常需要 10-30 分钟（取决于 CPU 性能）。转录期间可以继续做其他工作，只要不关闭命令窗口即可。</p>
+
+<h3>Q: 第一次 process 时卡住很久不动，正常吗？</h3>
+<p>正常。第一次使用时需要从网络下载 Whisper 模型（约 3GB），请耐心等待。下载完成后会自动继续处理，以后不需要重复下载。</p>
+
+<h3>Q: AI 总结显示 API Key 错误？</h3>
+<p>请检查：</p>
+<ol>
+  <li>设置 API Key 后是否重新打开了命令提示符（必须重新打开才能生效）</li>
+  <li>输入 <code>echo %OPENAI_API_KEY%</code> 确认 Key 已正确设置</li>
+  <li>确认 Key 本身有效（可以在 DeepSeek 控制台验证）</li>
+  <li>确认账户余额充足</li>
+</ol>
+
+<h3>Q: 录音没有声音，或者转录出来是空的？</h3>
+<p>win-rec 录制的是麦克风输入。请检查：</p>
+<ol>
+  <li>麦克风是否正确连接并选为默认录音设备</li>
+  <li>在 Windows 设置 → 系统 → 声音 → 输入，确认有信号</li>
+  <li>会议软件（如 Teams、Zoom）是否独占了麦克风——可以尝试先启动 win-rec，再进入会议</li>
+</ol>
+
+<h3>Q: 如何录制系统音频（对方的声音）？</h3>
+<p>当前版本只录制麦克风输入（你自己说话的声音）。如果需要同时录制对方声音，建议在耳机/扬声器旁放置麦克风，或使用带回声消除的专业麦克风。</p>
+
+<h3>Q: 转录结果里有很多乱码或英文，但会议说的是中文？</h3>
+<p>尝试设置语言提示：</p>
+<div class="cmd-block"><span class="prompt">&gt;</span> setx AI_REC_WHISPER_LANGUAGE "zh"</div>
+<p>重新打开命令提示符后再次运行 process。</p>
+
+<h3>Q: 想删除某次录音，如何操作？</h3>
+<div class="cmd-block"><span class="comment">:: 先查看录音列表，找到对应的 ID</span>
+<span class="prompt">&gt;</span> win-rec.exe list
+
+<span class="comment">:: 删除指定录音（会有确认提示）</span>
+<span class="prompt">&gt;</span> win-rec.exe delete 2025-01-15_10-00-00</div>
+
+<h3>Q: 程序崩溃后无法再 start，提示"已有录音在进行中"？</h3>
+<p>这是自动恢复机制。再次运行 <code>win-rec.exe start</code>，程序会自动检测并清理上次异常退出的残留状态，然后开始新录音。</p>
+
+<div class="version">
+  win-rec 使用手册 · 如遇问题请联系管理员
+</div>
+
+</div>
+</body>
+</html>

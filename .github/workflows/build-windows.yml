@@ -87,6 +87,10 @@ jobs:
         run: copy /y dist\win-rec-recorder.exe dist\win-rec\win-rec-recorder.exe
         shell: cmd
 
+      - name: Copy user manual into dist
+        run: copy /y "使用手册.html" "dist\win-rec\使用手册.html"
+        shell: cmd
+
       - name: Package zip
         run: Compress-Archive -Path dist\win-rec\* -DestinationPath dist\win-rec-windows.zip
         shell: pwsh

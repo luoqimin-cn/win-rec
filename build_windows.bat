@@ -108,11 +108,25 @@ if errorlevel 1 (
 echo [5/5] 整理输出目录...
 copy /y dist\win-rec-recorder.exe dist\win-rec\win-rec-recorder.exe >nul
 
+:: ---- 复制使用手册 ----
+if exist "使用手册.html" (
+    copy /y "使用手册.html" "dist\win-rec\使用手册.html" >nul
+    echo [OK] 使用手册已复制到 dist\win-rec\
+) else (
+    echo [警告] 未找到使用手册.html，跳过
+)
+
 :: ---- 完成 ----
 echo.
 echo ============================================================
 echo  打包完成！输出目录：dist\win-rec\
 echo ============================================================
+echo.
+echo  dist\win-rec\ 目录包含：
+echo    win-rec.exe           主程序
+echo    win-rec-recorder.exe  录音子程序
+echo    ffmpeg.exe / ffprobe.exe  音频工具
+echo    使用手册.html          用户手册（双击在浏览器打开）
 echo.
 echo  分发给用户时，将整个 dist\win-rec\ 文件夹压缩成 zip 即可。
 echo  用户解压后，在文件夹内打开 cmd，运行 win-rec.exe start

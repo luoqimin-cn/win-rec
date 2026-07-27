@@ -6,8 +6,15 @@ from pathlib import Path
 
 from pydub import AudioSegment
 from pydub.silence import detect_silence
+import pydub.utils
 
 from . import config
+
+# Tell pydub where ffmpeg/ffprobe are (critical when running as a frozen exe)
+pydub.utils.get_player_name = lambda: config.ffmpeg_path()
+AudioSegment.converter = config.ffmpeg_path()
+AudioSegment.ffmpeg = config.ffmpeg_path()
+AudioSegment.ffprobe = config.ffprobe_path()
 
 
 @dataclass

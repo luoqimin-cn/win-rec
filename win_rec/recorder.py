@@ -194,10 +194,12 @@ def _measure_m4a_seconds(path: Path) -> float | None:
 # ─────────────────────────────────────────────────────────────
 
 def _ensure_ffmpeg() -> str:
-    ff = shutil.which("ffmpeg")
-    if not ff:
+    ff = config.ffmpeg_path()
+    try:
+        subprocess.run([ff, "-version"], capture_output=True, timeout=5)
+    except (OSError, subprocess.TimeoutExpired):
         raise RecorderError(
-            "ffmpeg not on PATH — required for multi-segment recordings. "
+            "ffmpeg not found — required for multi-segment recordings. "
             "Install ffmpeg and ensure it is in PATH."
         )
     return ff
