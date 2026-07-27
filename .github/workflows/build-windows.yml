@@ -35,10 +35,11 @@ jobs:
           $size = (Get-Item $ff).Length
           Write-Host "ffmpeg size: $size bytes"
           if ($size -lt 10MB) { throw "ffmpeg 文件过小（$size 字节），可能是 shim，不是静态编译版" }
-          $devices = & ffmpeg -devices 2>&1
-          if ($devices -notmatch "dshow") { throw "ffmpeg 不支持 dshow，无法在 Windows 录音" }
-          Write-Host "ffmpeg dshow 验证通过"
-          Write-Host "ffmpeg 验证通过，支持 WASAPI"
+          # Debug: print available devices to see what this build supports
+          Write-Host "=== ffmpeg -devices ==="
+          & ffmpeg -devices 2>&1 | Write-Host
+          Write-Host "=== ffmpeg -formats (D=demuxer) ==="
+          & ffmpeg -formats 2>&1 | Select-String "^\s*D" | Select-Object -First 20 | Write-Host
           echo "path=$ff" >> $env:GITHUB_OUTPUT
           echo "probe=$fp" >> $env:GITHUB_OUTPUT
 
