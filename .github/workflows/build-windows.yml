@@ -19,8 +19,27 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install ffmpeg
-        run: choco install ffmpeg -y
+      - name: Install ffmpeg (静态编译版，支持 WASAPI)
+        uses: AnimMouse/setup-ffmpeg@v1
+        with:
+          version: release
+
+      - name: 获取并验证 ffmpeg 路径
+        id: ffmpeg
+        shell: pwsh
+        run: |
+          $ff = (Get-Command ffmpeg).Source
+          $fp = (Get-Command ffprobe).Source
+          Write-Host "ffmpeg: $ff"
+          Write-Host "ffprobe: $fp"
+          $size = (Get-Item $ff).Length
+          Write-Host "ffmpeg size: $size bytes"
+          if ($size -lt 10MB) { throw "ffmpeg 文件过小（$size 字节），可能是 shim，不是静态编译版" }
+          $formats = & ffmpeg -formats 2>&1
+          if ($formats -notmatch "wasapi") { throw "ffmpeg 不支持 WASAPI，无法在 Windows 录音" }
+          Write-Host "ffmpeg 验证通过，支持 WASAPI"
+          echo "path=$ff" >> $env:GITHUB_OUTPUT
+          echo "probe=$fp" >> $env:GITHUB_OUTPUT
 
       - name: Install dependencies
         run: |
@@ -28,25 +47,20 @@ jobs:
           pip install -e .
           pip install pyinstaller
 
-      - name: Get ffmpeg/ffprobe paths
-        id: ffmpeg
-        run: |
-          $ff = (Get-Command ffmpeg).Source
-          $fp = (Get-Command ffprobe).Source
-          echo "path=$ff" >> $env:GITHUB_OUTPUT
-          echo "probe=$fp" >> $env:GITHUB_OUTPUT
-
-      - name: Build recorder subprocess (onefile)
+      - name: Build recorder subprocess (onefile，含 ffmpeg)
+        shell: pwsh
         run: |
           pyinstaller `
             --onefile `
             --name win-rec-recorder `
             --console `
             --noconfirm `
+            "--add-binary=${{ steps.ffmpeg.outputs.path }};." `
+            "--add-binary=${{ steps.ffmpeg.outputs.probe }};." `
             win_rec\recorder_win.py
-        shell: pwsh
 
       - name: Build main exe (onedir)
+        shell: pwsh
         run: |
           pyinstaller `
             --onedir `
@@ -81,9 +95,9 @@ jobs:
             --collect-all ctranslate2 `
             --collect-all silero_vad `
             main.py
-        shell: pwsh
 
       - name: Build tray exe (onefile, noconsole)
+        shell: pwsh
         run: |
           pyinstaller `
             --onefile `
@@ -96,23 +110,34 @@ jobs:
             --hidden-import pystray `
             --hidden-import PIL `
             tray_main.py
+
+      - name: 整理输出目录
+        shell: cmd
+        run: |
+          copy /y dist\win-rec-recorder.exe dist\win-rec\win-rec-recorder.exe
+          copy /y dist\tray.exe dist\win-rec\tray.exe
+
+      - name: 验证 ffmpeg 已打包进 _internal\
         shell: pwsh
-
-      - name: Merge recorder exe into main dist
-        run: copy /y dist\win-rec-recorder.exe dist\win-rec\win-rec-recorder.exe
-        shell: cmd
-
-      - name: Merge tray exe into main dist
-        run: copy /y dist\tray.exe dist\win-rec\tray.exe
-        shell: cmd
+        run: |
+          if (-not (Test-Path "dist\win-rec\_internal\ffmpeg.exe")) {
+            throw "dist\win-rec\_internal\ffmpeg.exe 不存在，ffmpeg 未正确打包！"
+          }
+          if (-not (Test-Path "dist\win-rec\_internal\ffprobe.exe")) {
+            throw "dist\win-rec\_internal\ffprobe.exe 不存在，ffprobe 未正确打包！"
+          }
+          $size = (Get-Item "dist\win-rec\_internal\ffmpeg.exe").Length
+          Write-Host "打包后 ffmpeg 大小：$size 字节"
+          if ($size -lt 10MB) { throw "打包后的 ffmpeg 过小，可能带入了 shim" }
+          Write-Host "ffmpeg 打包验证通过"
 
       - name: Copy user manual into dist
-        run: copy /y "使用手册.html" "dist\win-rec\使用手册.html"
         shell: cmd
+        run: copy /y "使用手册.html" "dist\win-rec\使用手册.html"
 
       - name: Package zip
-        run: Compress-Archive -Path dist\win-rec\* -DestinationPath dist\win-rec-windows.zip
         shell: pwsh
+        run: Compress-Archive -Path dist\win-rec\* -DestinationPath dist\win-rec-windows.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

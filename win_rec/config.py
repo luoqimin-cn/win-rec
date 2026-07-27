@@ -48,12 +48,24 @@ def ensure_dirs() -> None:
     RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def ffmpeg_path() -> str:
-    """Return path to ffmpeg: bundled exe dir when frozen, otherwise system PATH."""
-    if getattr(sys, "frozen", False):
-        candidate = Path(sys.executable).parent / "ffmpeg.exe"
+def _bundled_bin(name: str) -> str | None:
+    """查找打包后的可执行文件，兼容 --onedir（_internal/）和 --onefile（_MEIPASS/）两种布局。"""
+    exe_dir = Path(sys.executable).parent
+    for candidate in [
+        exe_dir / name,                      # 根目录（旧布局）
+        exe_dir / "_internal" / name,        # PyInstaller --onedir 新布局
+        Path(getattr(sys, "_MEIPASS", "")) / name,  # --onefile 解压目录
+    ]:
         if candidate.exists():
             return str(candidate)
+    return None
+
+
+def ffmpeg_path() -> str:
+    if getattr(sys, "frozen", False):
+        found = _bundled_bin("ffmpeg.exe")
+        if found:
+            return found
     ff = shutil.which("ffmpeg")
     if ff:
         return ff
@@ -61,11 +73,10 @@ def ffmpeg_path() -> str:
 
 
 def ffprobe_path() -> str:
-    """Return path to ffprobe: bundled exe dir when frozen, otherwise system PATH."""
     if getattr(sys, "frozen", False):
-        candidate = Path(sys.executable).parent / "ffprobe.exe"
-        if candidate.exists():
-            return str(candidate)
+        found = _bundled_bin("ffprobe.exe")
+        if found:
+            return found
     fp = shutil.which("ffprobe")
     if fp:
         return fp

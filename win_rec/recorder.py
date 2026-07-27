@@ -342,6 +342,11 @@ def start(name: str | None = None) -> store.Session:
     except RecorderError:
         exit_code = proc.poll()
         proc.terminate()
+        try:
+            proc.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
         if exit_code is not None:
             raise RecorderError(
                 f"recorder subprocess exited immediately (code {exit_code}); "

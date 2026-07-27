@@ -21,20 +21,31 @@ from pathlib import Path
 POLL_INTERVAL = 0.1   # seconds between control file polls
 SEGMENT_ROTATE_ON_RESUME = True  # start a new segment file after each resume
 
-def _ffmpeg_exe() -> str:
-    """Return path to ffmpeg: bundled exe dir when frozen, otherwise system PATH."""
-    if getattr(sys, "frozen", False):
-        candidate = Path(sys.executable).parent / "ffmpeg.exe"
+def _find_bundled(name: str) -> str | None:
+    exe_dir = Path(sys.executable).parent
+    for candidate in [
+        exe_dir / name,
+        exe_dir / "_internal" / name,
+        Path(getattr(sys, "_MEIPASS", "")) / name,
+    ]:
         if candidate.exists():
             return str(candidate)
+    return None
+
+
+def _ffmpeg_exe() -> str:
+    if getattr(sys, "frozen", False):
+        found = _find_bundled("ffmpeg.exe")
+        if found:
+            return found
     return "ffmpeg"
 
+
 def _ffprobe_exe() -> str:
-    """Return path to ffprobe: bundled exe dir when frozen, otherwise system PATH."""
     if getattr(sys, "frozen", False):
-        candidate = Path(sys.executable).parent / "ffprobe.exe"
-        if candidate.exists():
-            return str(candidate)
+        found = _find_bundled("ffprobe.exe")
+        if found:
+            return found
     return "ffprobe"
 
 
