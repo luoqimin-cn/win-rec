@@ -126,6 +126,7 @@
     <li><a href="#install">安装说明</a></li>
     <li><a href="#apikey">配置 DeepSeek API Key</a></li>
     <li><a href="#quickstart">快速开始（录一次会议）</a></li>
+    <li><a href="#tray">系统托盘操作（tray.exe）</a></li>
     <li><a href="#commands">所有命令一览</a></li>
     <li><a href="#workflow">完整使用流程</a></li>
     <li><a href="#advanced">高级设置</a></li>
@@ -144,7 +145,8 @@
     <div class="cmd-block">C:\Users\你的用户名\Desktop\win-rec\</div>
     <p>解压后目录结构如下：</p>
     <div class="cmd-block">win-rec\
-  win-rec.exe              ← 主程序
+  win-rec.exe              ← 主程序（命令行操作）
+  tray.exe                 ← 系统托盘程序（图形化操作，双击启动）
   win-rec-recorder.exe     ← 录音子程序（自动调用，无需手动运行）
   ffmpeg.exe               ← 音频处理工具（已内置）
   ffprobe.exe              ← 音频分析工具（已内置）
@@ -266,7 +268,101 @@
 </div>
 
 <!-- ───────────────────────────────── -->
-<h2 id="commands">4. 所有命令一览</h2>
+<h2 id="tray">4. 系统托盘操作（tray.exe）</h2>
+
+<p>除命令行外，win-rec 还提供一个系统托盘程序 <code>tray.exe</code>，让你通过右键菜单完成所有录音操作，无需打开命令窗口。</p>
+
+<h3>启动托盘程序</h3>
+<p>双击 <code>win-rec</code> 文件夹中的 <code>tray.exe</code>，任务栏右侧通知区域会出现一个圆形图标：</p>
+<table>
+  <tr>
+    <th>图标颜色</th>
+    <th>含义</th>
+  </tr>
+  <tr>
+    <td>⚫ 灰色</td>
+    <td>空闲，当前没有录音</td>
+  </tr>
+  <tr>
+    <td>🔴 红色</td>
+    <td>正在录音中</td>
+  </tr>
+  <tr>
+    <td>🟡 黄色</td>
+    <td>录音已暂停</td>
+  </tr>
+</table>
+
+<h3>右键菜单功能</h3>
+<p>在托盘图标上<strong>单击右键</strong>，弹出菜单：</p>
+<table>
+  <tr>
+    <th>菜单项</th>
+    <th>说明</th>
+    <th>可用状态</th>
+  </tr>
+  <tr>
+    <td>● 空闲 / ● 录音中 / ⏸ 已暂停</td>
+    <td>当前状态显示（不可点击）</td>
+    <td>始终显示</td>
+  </tr>
+  <tr>
+    <td>开始录音</td>
+    <td>开始一次新录音</td>
+    <td>空闲时</td>
+  </tr>
+  <tr>
+    <td>暂停录音</td>
+    <td>暂停当前录音</td>
+    <td>录音中时</td>
+  </tr>
+  <tr>
+    <td>恢复录音</td>
+    <td>从暂停处继续录音</td>
+    <td>已暂停时</td>
+  </tr>
+  <tr>
+    <td>停止录音</td>
+    <td>停止当前录音，不处理</td>
+    <td>录音中或已暂停时</td>
+  </tr>
+  <tr>
+    <td>停止并处理</td>
+    <td>停止录音并立即开始转录和 AI 总结</td>
+    <td>录音中或已暂停时</td>
+  </tr>
+  <tr>
+    <td>最近录音 ▶</td>
+    <td>列出最近 5 次录音，点击可打开对应文件夹</td>
+    <td>始终显示</td>
+  </tr>
+  <tr>
+    <td>查看最新摘要</td>
+    <td>用默认程序打开最近一次生成的 summary.md</td>
+    <td>始终显示</td>
+  </tr>
+  <tr>
+    <td>打开录音文件夹</td>
+    <td>在文件资源管理器中打开录音存储目录</td>
+    <td>始终显示</td>
+  </tr>
+  <tr>
+    <td>退出</td>
+    <td>关闭托盘程序（不影响正在进行的录音）</td>
+    <td>始终显示</td>
+  </tr>
+</table>
+
+<div class="tip">
+  <strong>提示：</strong>托盘图标每 2 秒自动刷新一次状态，无需手动刷新。灰色变红色说明录音已成功开始。
+</div>
+
+<div class="tip">
+  <strong>提示：</strong>如需开机自动启动托盘程序，可将 <code>tray.exe</code> 的快捷方式放入开始菜单的"启动"文件夹（按 <code>Win+R</code>，输入 <code>shell:startup</code> 打开）。
+</div>
+
+<!-- ───────────────────────────────── -->
+<h2 id="commands">5. 所有命令一览</h2>
 
 <table>
   <tr>
@@ -322,7 +418,7 @@
 </table>
 
 <!-- ───────────────────────────────── -->
-<h2 id="workflow">5. 完整使用流程</h2>
+<h2 id="workflow">6. 完整使用流程</h2>
 
 <h3>场景一：普通会议录音</h3>
 <div class="cmd-block"><span class="comment">:: 开会前启动录音（可选：给本次录音起个名字）</span>
@@ -362,7 +458,7 @@
 </div>
 
 <!-- ───────────────────────────────── -->
-<h2 id="advanced">6. 高级设置</h2>
+<h2 id="advanced">7. 高级设置</h2>
 
 <h3>修改录音数据存储位置</h3>
 <div class="cmd-block"><span class="comment">:: 将录音保存到 D 盘（路径中不要有空格）</span>
@@ -435,7 +531,7 @@
 </table>
 
 <!-- ───────────────────────────────── -->
-<h2 id="faq">7. 常见问题</h2>
+<h2 id="faq">8. 常见问题</h2>
 
 <h3>Q: 运行后提示找不到程序，怎么办？</h3>
 <p>请确保命令提示符的当前目录是 <code>win-rec</code> 文件夹（即 <code>win-rec.exe</code> 所在的目录）。可以在地址栏输入 <code>cmd</code> 直接打开，或使用 <code>cd</code> 命令切换。</p>
