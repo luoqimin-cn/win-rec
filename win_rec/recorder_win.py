@@ -122,9 +122,17 @@ def main() -> None:
     _log_event(log_path, {"event": "init"})
     _log_event(log_path, {"event": "starting"})
 
-    # Start first segment.
+    # Start first segment and verify ffmpeg didn't exit immediately.
     current_proc = _ffmpeg_start(session_dir, seg_index)
     seg_start_time = time.time()
+    time.sleep(0.5)
+    if current_proc.poll() is not None:
+        _log_event(log_path, {
+            "event": "error",
+            "message": f"ffmpeg exited immediately (code {current_proc.returncode}); "
+                       "check that a microphone is connected and not in use by another app",
+        })
+        return
 
     _log_event(log_path, {
         "event": "started",
@@ -222,4 +230,20 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # Wrap top-level so any unhandled exception writes an error event to the
+    # log before exiting — otherwise recorder.py times out with no diagnosis.
+    import argparse as _ap
+    _pre = _ap.ArgumentParser(add_help=False)
+    _pre.add_argument("--session-dir", dest="session_dir")
+    _pre.add_argument("--control-cmd", dest="control_cmd")
+    _known, _ = _pre.parse_known_args()
+    _log_path = Path(_known.session_dir) / "recorder.log" if _known.session_dir else None
+    try:
+        main()
+    except Exception as exc:  # noqa: BLE001
+        if _log_path:
+            try:
+                _log_event(_log_path, {"event": "error", "message": f"recorder_win crashed: {exc}"})
+            except Exception:
+                pass
+        raise

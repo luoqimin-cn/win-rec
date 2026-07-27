@@ -340,7 +340,13 @@ def start(name: str | None = None) -> store.Session:
     try:
         evt, _ = _tail_log_for_event(log_path, {"started", "error"}, timeout=15.0)
     except RecorderError:
+        exit_code = proc.poll()
         proc.terminate()
+        if exit_code is not None:
+            raise RecorderError(
+                f"recorder subprocess exited immediately (code {exit_code}); "
+                "check that win-rec-recorder.exe is present and not blocked by antivirus"
+            )
         raise
 
     if evt.get("event") == "error":

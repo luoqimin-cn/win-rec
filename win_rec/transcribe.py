@@ -4,9 +4,12 @@ import tempfile
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
-from pydub import AudioSegment
-from pydub.silence import detect_silence
-import pydub.utils
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", RuntimeWarning)
+    from pydub import AudioSegment
+    from pydub.silence import detect_silence
+    import pydub.utils
 
 from . import config
 
