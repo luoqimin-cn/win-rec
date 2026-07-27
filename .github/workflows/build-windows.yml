@@ -83,8 +83,27 @@ jobs:
             main.py
         shell: pwsh
 
+      - name: Build tray exe (onefile, noconsole)
+        run: |
+          pyinstaller `
+            --onefile `
+            --name tray `
+            --noconsole `
+            --noconfirm `
+            --hidden-import win_rec.tray `
+            --hidden-import win_rec.config `
+            --hidden-import win_rec.store `
+            --hidden-import pystray `
+            --hidden-import PIL `
+            tray_main.py
+        shell: pwsh
+
       - name: Merge recorder exe into main dist
         run: copy /y dist\win-rec-recorder.exe dist\win-rec\win-rec-recorder.exe
+        shell: cmd
+
+      - name: Merge tray exe into main dist
+        run: copy /y dist\tray.exe dist\win-rec\tray.exe
         shell: cmd
 
       - name: Copy user manual into dist
@@ -111,6 +130,7 @@ jobs:
 
             1. 下载 `win-rec-windows.zip`
             2. 解压到任意文件夹
-            3. 在该文件夹内打开命令提示符（cmd），运行 `win-rec.exe start`
+            3. 命令行方式：在该文件夹内打开 cmd，运行 `win-rec.exe start`
+            4. 托盘方式：双击 `tray.exe`，系统托盘出现图标后右键操作
 
             详细说明请参阅 README.md。

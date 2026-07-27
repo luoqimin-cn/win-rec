@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import pystray; import inspect; src = inspect.getsource\\(pystray.MenuItem.__init__\\); print\\(src[:3000]\\)\")"
+    ]
+  }
+}

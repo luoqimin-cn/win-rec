@@ -104,9 +104,28 @@ if errorlevel 1 (
     pause & exit /b 1
 )
 
+:: ---- PyInstaller 打包托盘程序 ----
+echo [4c/5] 打包托盘程序 tray.exe ...
+pyinstaller ^
+    --onefile ^
+    --name tray ^
+    --noconsole ^
+    --noconfirm ^
+    --hidden-import win_rec.tray ^
+    --hidden-import win_rec.config ^
+    --hidden-import win_rec.store ^
+    --hidden-import pystray ^
+    --hidden-import PIL ^
+    tray_main.py 2>build_tray.log
+if errorlevel 1 (
+    echo [错误] tray 打包失败，查看 build_tray.log
+    pause & exit /b 1
+)
+
 :: ---- 合并输出目录 ----
 echo [5/5] 整理输出目录...
 copy /y dist\win-rec-recorder.exe dist\win-rec\win-rec-recorder.exe >nul
+copy /y dist\tray.exe dist\win-rec\tray.exe >nul
 
 :: ---- 复制使用手册 ----
 if exist "使用手册.html" (
@@ -125,6 +144,7 @@ echo.
 echo  dist\win-rec\ 目录包含：
 echo    win-rec.exe           主程序
 echo    win-rec-recorder.exe  录音子程序
+echo    tray.exe              系统托盘程序
 echo    ffmpeg.exe / ffprobe.exe  音频工具
 echo    使用手册.html          用户手册（双击在浏览器打开）
 echo.
