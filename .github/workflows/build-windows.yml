@@ -145,10 +145,18 @@ jobs:
           name: win-rec-windows
           path: dist\win-rec-windows.zip
 
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Update latest tag
+        run: |
+          git tag -f latest
+          git push -f origin latest
+
+      - name: Create GitHub Release (latest)
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: latest
+          name: Latest Build
+          prerelease: true
+          make_latest: false
           files: dist\win-rec-windows.zip
           body: |
             ## 安装说明
