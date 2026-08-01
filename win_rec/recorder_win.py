@@ -55,43 +55,13 @@ def _log_event(log_path: Path, event: dict) -> None:
         f.flush()
 
 
-def _get_default_mic() -> str | None:
-    """Return the first available dshow audio device name, or None."""
-    try:
-        result = subprocess.run(
-            [_ffmpeg_exe(), "-list_devices", "true", "-f", "dshow", "-i", "dummy"],
-            capture_output=True, text=True, timeout=10,
-        )
-        # Parse stderr for device names between "DirectShow audio devices" and next section
-        lines = result.stderr.splitlines()
-        in_audio = False
-        for line in lines:
-            if "DirectShow audio devices" in line:
-                in_audio = True
-                continue
-            if in_audio and "DirectShow" in line and "devices" in line:
-                break  # next device category
-            if in_audio:
-                # Device names are quoted: "Microphone (Realtek HD Audio)"
-                import re as _re
-                m = _re.search(r'"([^"]+)"', line)
-                if m and "Alternative name" not in line:
-                    return m.group(1)
-    except Exception:
-        pass
-    return None
-
-
 def _ffmpeg_start(session_dir: Path, seg_index: int) -> subprocess.Popen:
-    """Launch ffmpeg capturing from the default microphone via dshow."""
-    mic = _get_default_mic()
-    if not mic:
-        raise RuntimeError("No audio capture device found (dshow)")
+    """Launch ffmpeg capturing from the default WASAPI microphone."""
     seg_path = session_dir / f"mic.{seg_index:03d}.m4a"
     cmd = [
         _ffmpeg_exe(), "-y",
-        "-f", "dshow",
-        "-i", f"audio={mic}",
+        "-f", "wasapi",
+        "-i", "default",
         "-ar", "16000",
         "-ac", "1",
         "-c:a", "aac",
