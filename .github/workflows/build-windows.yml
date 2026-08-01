@@ -145,11 +145,6 @@ jobs:
           name: win-rec-windows
           path: dist\win-rec-windows.zip
 
-      - name: Update latest tag
-        run: |
-          git tag -f latest
-          git push -f origin latest
-
       - name: Create GitHub Release (latest)
         uses: softprops/action-gh-release@v2
         with:
