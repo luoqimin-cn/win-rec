@@ -48,14 +48,14 @@ if %FFMPEG_SIZE% LSS 10485760 (
 )
 echo [OK] ffmpeg 大小验证通过（%FFMPEG_SIZE% 字节）
 
-:: ---- 验证 ffmpeg 支持 WASAPI（Windows 录音必须）----
-"%FFMPEG_PATH%" -formats 2>&1 | findstr /i "wasapi" >nul
+:: ---- 验证 ffmpeg 支持 dshow（Windows 录音必须）----
+"%FFMPEG_PATH%" -devices 2>&1 | findstr /i "dshow" >nul
 if errorlevel 1 (
-    echo [错误] 此 ffmpeg 不支持 WASAPI，无法在 Windows 上录音。
+    echo [错误] 此 ffmpeg 不支持 dshow，无法在 Windows 上录音。
     echo   请下载 full 版本：https://www.gyan.dev/ffmpeg/builds/ → ffmpeg-release-full.zip
     pause & exit /b 1
 )
-echo [OK] ffmpeg 支持 WASAPI
+echo [OK] ffmpeg 支持 dshow
 
 for %%i in ("%FFMPEG_PATH%") do set FFMPEG_DIR=%%~dpi
 set FFMPEG_DIR=%FFMPEG_DIR:~0,-1%

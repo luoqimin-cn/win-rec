@@ -1,57 +1,29 @@
 #!/bin/bash
-set -e
-SRC="/Users/jamesluo/Downloads/win-rec"
-DIR="/Users/jamesluo/Library/Mobile Documents/com~apple~CloudDocs/AI Studio/win-rec"
-TOKEN=$(cat "$DIR/.build_token")
+set -euo pipefail
+
 REPO="luoqimin-cn/win-rec"
+BRANCH="${1:-main}"
 
-cd "$DIR"
+echo "=== win-rec 构建触发脚本 ==="
 
-# 1. sync
-rsync -a --exclude '.git' "$SRC"/ ./
+# 检查是否有未提交的更改
+if [[ -n $(git status --porcelain) ]]; then
+    echo "[1/3] 有未提交更改，正在提交..."
+    git add -A
+    git commit -m "sync: local changes $(date '+%Y-%m-%d %H:%M')" || {
+        echo "没有需要提交的内容，跳过 commit"
+    }
+else
+    echo "[1/3] 工作区干净，跳过 commit"
+fi
 
-# 2. commit
-git add -A
-git diff --cached --stat
-git commit -m "update: $(date '+%m-%d %H:%M')" || { echo "无变更，跳过"; exit 0; }
+echo "[2/3] 推送到 GitHub ($BRANCH)..."
+git push origin "$BRANCH"
 
-# 3. push
-git -c http.version=HTTP/1.1 -c remote.origin.url="https://${TOKEN}@github.com/${REPO}.git" push
+echo "[3/3] 触发 CI 构建..."
+gh workflow run build-windows.yml -R "$REPO" --ref "$BRANCH"
 
-# 4. trigger build
-echo -n "触发构建... "
-HTTP=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-  "https://api.github.com/repos/${REPO}/actions/workflows/build-windows.yml/dispatches" \
-  -H "Authorization: token ${TOKEN}" \
-  -H "Accept: application/vnd.github+json" \
-  -d '{"ref":"main"}')
-echo "HTTP $HTTP"
-
-# 5. wait & check
-echo "等待构建完成..."
-sleep 60
-
-for i in $(seq 1 15); do
-  RESULT=$(curl -s "https://api.github.com/repos/${REPO}/actions/runs?per_page=1" \
-    -H "Authorization: token ${TOKEN}" \
-    -H "Accept: application/vnd.github+json")
-  STATUS=$(echo "$RESULT" | python3 -c "import sys,json;print(json.load(sys.stdin)['workflow_runs'][0]['status'])")
-  CONCLUSION=$(echo "$RESULT" | python3 -c "import sys,json;print(json.load(sys.stdin)['workflow_runs'][0]['conclusion'] or '')")
-  URL=$(echo "$RESULT" | python3 -c "import sys,json;print(json.load(sys.stdin)['workflow_runs'][0]['html_url'])")
-
-  if [ "$STATUS" = "completed" ]; then
-    if [ "$CONCLUSION" = "success" ]; then
-      echo "✓ 构建成功！"
-      echo "下载: $URL"
-    else
-      echo "✗ 构建失败 ($CONCLUSION)"
-      echo "查看: $URL"
-    fi
-    exit 0
-  fi
-
-  echo "  构建中... ($((i+1))/15)"
-  sleep 60
-done
-
-echo "⚠ 超时，手动查看: https://github.com/${REPO}/actions"
+echo ""
+echo "✓ 已推送并触发构建"
+echo "  查看进度: https://github.com/$REPO/actions"
+echo "  下载地址: https://github.com/$REPO/releases/tag/latest"

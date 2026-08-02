@@ -1,0 +1,3 @@
+- [win-rec 项目概况](win-rec-project-overview.md) — 架构、模块、数据流
+- [dshow 修复 + CI Release](win-rec-dshow-fix.md) — WASAPI→dshow 迁移、自动 Release
+- [构建踩坑记录](win-rec-build-pitfalls.md) — pwsh 2>&1 陷阱、SRC 覆盖、续传、网络问题

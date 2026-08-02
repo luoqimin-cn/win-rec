@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install ffmpeg (静态编译版，支持 WASAPI)
+      - name: Install ffmpeg (静态编译版，支持 dshow)
         uses: AnimMouse/setup-ffmpeg@v1
         with:
           version: release
@@ -148,13 +148,10 @@ jobs:
           name: win-rec-windows
           path: dist\win-rec-windows.zip
 
-      - name: Create GitHub Release (latest)
+      - name: Create GitHub Release (version tag)
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: Latest Build
-          prerelease: true
-          make_latest: false
           files: dist\win-rec-windows.zip
           body: |
             ## 安装说明
@@ -165,3 +162,22 @@ jobs:
             4. 托盘方式：双击 `tray.exe`，系统托盘出现图标后右键操作
 
             详细说明请参阅 README.md。
+
+      - name: Create GitHub Release (latest)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest Build
+          prerelease: true
+          make_latest: true
+          files: dist\win-rec-windows.zip
+          body: |
+            ## 安装说明
+
+            1. 下载 `win-rec-windows.zip`
+            2. 解压到任意文件夹
+            3. 命令行方式：在该文件夹内打开 cmd，运行 `win-rec.exe start`
+            4. 托盘方式：双击 `tray.exe`，系统托盘出现图标后右键操作
+
+            > 每次构建自动更新此 Release。支持断点续传下载。
+            > https://github.com/luoqimin-cn/win-rec/releases/tag/latest

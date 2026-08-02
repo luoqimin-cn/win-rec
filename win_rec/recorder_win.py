@@ -56,14 +56,16 @@ def _log_event(log_path: Path, event: dict) -> None:
         f.flush()
 
 
-def _get_default_mic() -> str | None:
-    """Return the first available dshow audio device name, or None."""
+def _list_dshow_devices() -> tuple[list[str], str]:
+    """Return (device_names, raw_stderr) from dshow device listing."""
     try:
         result = subprocess.run(
             [_ffmpeg_exe(), "-list_devices", "true", "-f", "dshow", "-i", "dummy"],
             capture_output=True, text=True, timeout=10,
         )
-        lines = result.stderr.splitlines()
+        raw = result.stderr
+        lines = raw.splitlines()
+        devices: list[str] = []
         in_audio = False
         for line in lines:
             if "DirectShow audio devices" in line:
@@ -73,35 +75,70 @@ def _get_default_mic() -> str | None:
                 break
             if in_audio:
                 m = re.search(r'"([^"]+)"', line)
-                if m and "Alternative name" not in line:
-                    return m.group(1)
-    except Exception:
-        pass
-    return None
+                if m:
+                    name = m.group(1)
+                    if "Alternative name" not in line:
+                        devices.append(name)
+        return devices, raw
+    except Exception as e:
+        return [], str(e)
 
 
-def _ffmpeg_start(session_dir: Path, seg_index: int) -> subprocess.Popen:
-    """Launch ffmpeg capturing from the default microphone via dshow."""
-    mic = _get_default_mic()
-    if not mic:
-        raise RuntimeError("No audio capture device found (dshow)")
+def _ffmpeg_start(session_dir: Path, seg_index: int,
+                  devices: list[str] | None = None) -> subprocess.Popen:
+    """Launch ffmpeg capturing from the default microphone.
+
+    Priority: dshow (named device) → dshow (audio=default) → wasapi (default).
+    """
+    if devices is None:
+        devices, _ = _list_dshow_devices()
+    mic = devices[0] if devices else None
+
     seg_path = session_dir / f"mic.{seg_index:03d}.m4a"
-    cmd = [
+
+    # Strategy 1: dshow with detected device name
+    if mic:
+        cmd = [
+            _ffmpeg_exe(), "-y",
+            "-f", "dshow", "-i", f"audio={mic}",
+            "-ar", "16000", "-ac", "1",
+            "-c:a", "aac", "-b:a", "32k",
+            str(seg_path),
+        ]
+        proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL,
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return proc
+
+    # Strategy 2: dshow with "audio=default" (works with some drivers)
+    cmd_dshow = [
         _ffmpeg_exe(), "-y",
-        "-f", "dshow",
-        "-i", f"audio={mic}",
-        "-ar", "16000",
-        "-ac", "1",
-        "-c:a", "aac",
-        "-b:a", "32k",
+        "-f", "dshow", "-i", "audio=default",
+        "-ar", "16000", "-ac", "1",
+        "-c:a", "aac", "-b:a", "32k",
         str(seg_path),
     ]
-    proc = subprocess.Popen(
-        cmd,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    proc = subprocess.Popen(cmd_dshow, stdin=subprocess.DEVNULL,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(0.5)
+    if proc.poll() is None:
+        return proc  # dshow default works
+    # dshow default failed — clean up and fall through to wasapi
+    try:
+        proc.kill()
+        proc.wait()
+    except Exception:
+        pass
+
+    # Strategy 3: wasapi fallback (older ffmpeg builds)
+    cmd_wasapi = [
+        _ffmpeg_exe(), "-y",
+        "-f", "wasapi", "-i", "default",
+        "-ar", "16000", "-ac", "1",
+        "-c:a", "aac", "-b:a", "32k",
+        str(seg_path),
+    ]
+    proc = subprocess.Popen(cmd_wasapi, stdin=subprocess.DEVNULL,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return proc
 
 
@@ -159,17 +196,35 @@ def main() -> None:
     current_proc: subprocess.Popen | None = None
 
     _log_event(log_path, {"event": "init"})
+
+    # Dump dshow device listing for diagnostics
+    devices, dshow_raw = _list_dshow_devices()
+    _log_event(log_path, {
+        "event": "dshow_devices",
+        "devices": devices,
+        "raw_stderr_first_2k": dshow_raw[:2000] if dshow_raw else "",
+    })
     _log_event(log_path, {"event": "starting"})
 
     # Start first segment and verify ffmpeg didn't exit immediately.
-    current_proc = _ffmpeg_start(session_dir, seg_index)
+    try:
+        current_proc = _ffmpeg_start(session_dir, seg_index, devices=devices)
+    except RuntimeError as e:
+        _log_event(log_path, {
+            "event": "error",
+            "message": f"ffmpeg start failed: {e}",
+            "dshow_devices": devices,
+            "dshow_raw_stderr": dshow_raw[:2000],
+        })
+        return
     seg_start_time = time.time()
     time.sleep(0.5)
     if current_proc.poll() is not None:
         _log_event(log_path, {
             "event": "error",
             "message": f"ffmpeg exited immediately (code {current_proc.returncode}); "
-                       "check that a microphone is connected and not in use by another app",
+                       f"check that a microphone is connected and not in use by another app. "
+                       f"dshow devices found: {devices or 'none'}",
         })
         return
 
@@ -212,7 +267,7 @@ def main() -> None:
             elif cmd == "RESUME" and paused:
                 paused = False
                 seg_index += 1
-                current_proc = _ffmpeg_start(session_dir, seg_index)
+                current_proc = _ffmpeg_start(session_dir, seg_index, devices=devices)
                 seg_start_time = time.time()
                 _log_event(log_path, {"event": "resumed"})
 
@@ -235,7 +290,7 @@ def main() -> None:
                 mic_muted = False
                 if not paused:
                     seg_index += 1
-                    current_proc = _ffmpeg_start(session_dir, seg_index)
+                    current_proc = _ffmpeg_start(session_dir, seg_index, devices=devices)
                     seg_start_time = time.time()
                 _log_event(log_path, {"event": "mic_on"})
 
