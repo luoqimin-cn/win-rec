@@ -57,28 +57,24 @@ def _log_event(log_path: Path, event: dict) -> None:
 
 
 def _list_dshow_devices() -> tuple[list[str], str]:
-    """Return (device_names, raw_stderr) from dshow device listing."""
+    """Return (audio_device_names, raw_stderr) from dshow device listing."""
     try:
         result = subprocess.run(
             [_ffmpeg_exe(), "-list_devices", "true", "-f", "dshow", "-i", "dummy"],
             capture_output=True, text=True, timeout=10,
         )
         raw = result.stderr
-        lines = raw.splitlines()
         devices: list[str] = []
-        in_audio = False
-        for line in lines:
-            if "DirectShow audio devices" in line:
-                in_audio = True
+        for line in raw.splitlines():
+            # Only match lines tagged "(audio)" — video devices appear in
+            # the same listing and would fail when used as audio input.
+            if "(audio)" not in line:
                 continue
-            if in_audio and "DirectShow" in line and "devices" in line:
-                break
-            if in_audio:
-                m = re.search(r'"([^"]+)"', line)
-                if m:
-                    name = m.group(1)
-                    if "Alternative name" not in line:
-                        devices.append(name)
+            if "Alternative name" in line:
+                continue
+            m = re.search(r'"([^"]+)"', line)
+            if m:
+                devices.append(m.group(1))
         return devices, raw
     except Exception as e:
         return [], str(e)
@@ -86,60 +82,23 @@ def _list_dshow_devices() -> tuple[list[str], str]:
 
 def _ffmpeg_start(session_dir: Path, seg_index: int,
                   devices: list[str] | None = None) -> subprocess.Popen:
-    """Launch ffmpeg capturing from the default microphone.
-
-    Priority: dshow (named device) → dshow (audio=default) → wasapi (default).
-    """
+    """Launch ffmpeg capturing from the first available dshow audio device."""
     if devices is None:
         devices, _ = _list_dshow_devices()
     mic = devices[0] if devices else None
+    if not mic:
+        raise RuntimeError("No audio capture device found (dshow)")
 
     seg_path = session_dir / f"mic.{seg_index:03d}.m4a"
-
-    # Strategy 1: dshow with detected device name
-    if mic:
-        cmd = [
-            _ffmpeg_exe(), "-y",
-            "-f", "dshow", "-i", f"audio={mic}",
-            "-ar", "16000", "-ac", "1",
-            "-c:a", "aac", "-b:a", "32k",
-            str(seg_path),
-        ]
-        proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL,
-                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        return proc
-
-    # Strategy 2: dshow with "audio=default" (works with some drivers)
-    cmd_dshow = [
+    cmd = [
         _ffmpeg_exe(), "-y",
-        "-f", "dshow", "-i", "audio=default",
+        "-f", "dshow", "-i", f"audio={mic}",
         "-ar", "16000", "-ac", "1",
         "-c:a", "aac", "-b:a", "32k",
         str(seg_path),
     ]
-    proc = subprocess.Popen(cmd_dshow, stdin=subprocess.DEVNULL,
+    return subprocess.Popen(cmd, stdin=subprocess.DEVNULL,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    time.sleep(0.5)
-    if proc.poll() is None:
-        return proc  # dshow default works
-    # dshow default failed — clean up and fall through to wasapi
-    try:
-        proc.kill()
-        proc.wait()
-    except Exception:
-        pass
-
-    # Strategy 3: wasapi fallback (older ffmpeg builds)
-    cmd_wasapi = [
-        _ffmpeg_exe(), "-y",
-        "-f", "wasapi", "-i", "default",
-        "-ar", "16000", "-ac", "1",
-        "-c:a", "aac", "-b:a", "32k",
-        str(seg_path),
-    ]
-    proc = subprocess.Popen(cmd_wasapi, stdin=subprocess.DEVNULL,
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    return proc
 
 
 def _stop_ffmpeg(proc: subprocess.Popen) -> None:
