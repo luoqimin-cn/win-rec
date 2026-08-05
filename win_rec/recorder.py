@@ -19,6 +19,23 @@ class RecorderError(RuntimeError):
 
 
 def _alive(pid: int) -> bool:
+    # Windows: os.kill(pid, 0) is unreliable — raises WinError 87/11/etc.
+    # Use kernel32.OpenProcess instead.
+    if sys.platform == "win32":
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if handle:
+            kernel32.CloseHandle(handle)
+            return True
+        err = kernel32.GetLastError()
+        if err == 5:  # ERROR_ACCESS_DENIED → process exists
+            return True
+        if err == 87:  # ERROR_INVALID_PARAMETER → pid invalid
+            return False
+        return False
+
     try:
         os.kill(pid, 0)
         return True

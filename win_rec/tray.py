@@ -52,6 +52,19 @@ def _read_active() -> dict | None:
 
 
 def _alive(pid: int) -> bool:
+    if sys.platform == "win32":
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if handle:
+            kernel32.CloseHandle(handle)
+            return True
+        err = kernel32.GetLastError()
+        if err == 5:  # ERROR_ACCESS_DENIED
+            return True
+        return False
+
     try:
         os.kill(pid, 0)
         return True
@@ -59,8 +72,6 @@ def _alive(pid: int) -> bool:
         return False
     except PermissionError:
         return True
-    except OSError:
-        return False
 
 
 def _get_state() -> str:
